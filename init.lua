@@ -458,7 +458,7 @@ require("lazy").setup({
 								callSnippet = "Replace",
 							},
 							-- You can toggle below to ignore Lua_LS's noisy `missing-fields` warnings
-							-- diagnostics = { disable = { 'missing-fields' } },
+							diagnostics = { disable = { "missing-fields" } },
 						},
 					},
 				},
@@ -762,7 +762,22 @@ require("lazy").setup({
 		---@type snacks.Config
 		opts = {
 			bigfile = { enabled = true },
-			dashboard = { enabled = true },
+			dashboard = {
+				enabled = true,
+				sections = {
+					{ section = "header" },
+					{ section = "keys", gap = 1, padding = 1 },
+					{ section = "startup" },
+					{
+						section = "terminal",
+						cmd = "pokemon-colorscripts -r --no-title; sleep .1",
+						random = 10,
+						pane = 2,
+						indent = 4,
+						height = 30,
+					},
+				},
+			},
 			explorer = { enabled = true },
 			indent = { enabled = true },
 			input = { enabled = true },
@@ -781,7 +796,7 @@ require("lazy").setup({
 			-- Top Pickers & Explorer
 			{ "<leader>fd", function() Snacks.picker.smart() end, desc = "Smart Find Files" },
 			{ "<leader>,", function() Snacks.picker.buffers() end, desc = "Buffers" },
-			{ "<leader>/", function() Snacks.picker.grep() end, desc = "Grep" },
+			{ "<leader>/", function() Snacks.picker.grep({need_search = false, live = false}) end, desc = "Grep" },
 			{ "<leader>e", function() Snacks.explorer() end, desc = "File Explorer" },
 			{ "\\", function() Snacks.explorer() end, desc = "File Explorer" },
 			-- find
@@ -798,7 +813,7 @@ require("lazy").setup({
 			-- Grep
 			{ "<leader>sb", function() Snacks.picker.lines() end, desc = "Buffer Lines" },
 			{ "<leader>sB", function() Snacks.picker.grep_buffers() end, desc = "Grep Open Buffers" },
-			{ "<leader>sg", function() Snacks.picker.grep() end, desc = "Grep" },
+			{ "<leader>sg", function() Snacks.picker.grep({need_search = false, live = false}) end, desc = "Grep" },
 			{ "<leader>sw", function() Snacks.picker.grep_word() end, desc = "Visual selection or word", mode = { "n", "x" } },
 			-- search
 			{ "<leader>s/", function() Snacks.picker.search_history() end, desc = "Search History" },
