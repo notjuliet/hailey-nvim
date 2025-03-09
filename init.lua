@@ -694,7 +694,7 @@ require("lazy").setup({
 				nerd_font_variant = "mono",
 			},
 			sources = {
-				default = { "lsp", "path", "buffer" },
+				default = { "lsp", "path" },
 			},
 			fuzzy = { implementation = "prefer_rust_with_warning" },
 			completion = {
@@ -735,6 +735,7 @@ require("lazy").setup({
 
 	{
 		"sindrets/diffview.nvim",
+		dependencies = { "nvim-tree/nvim-web-devicons" },
 		config = function()
 			local diffview = require("diffview")
 			vim.keymap.set("n", "<leader>gd", diffview.open, { desc = "[G]it [D]iff" })
