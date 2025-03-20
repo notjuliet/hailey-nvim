@@ -558,7 +558,7 @@ require("lazy").setup({
 				html = { "prettierd" },
 				typescript = { "prettierd" },
 				typescriptreact = { "prettierd" },
-				-- go = { "golines", "goimports" },
+				go = { "goimports" },
 			},
 		},
 	},
