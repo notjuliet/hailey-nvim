@@ -448,6 +448,7 @@ require("lazy").setup({
 				marksman = {},
 				pylsp = {},
 				vtsls = {},
+				tailwindcss = {},
 				lua_ls = {
 					-- cmd = { ... },
 					-- filetypes = { ... },
