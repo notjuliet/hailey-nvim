@@ -444,9 +444,11 @@ require("lazy").setup({
 			local servers = {
 				bashls = {},
 				docker_compose_language_service = {},
-				gopls = {},
+				-- gopls = {},
 				marksman = {},
-				pylsp = {},
+				pylsp = {
+					cmd = { "uv", "run", "pylsp" },
+				},
 				vtsls = {},
 				tailwindcss = {},
 				lua_ls = {
@@ -679,7 +681,6 @@ require("lazy").setup({
 	require("kickstart.plugins.autopairs"),
 	-- require("kickstart.plugins.neo-tree"),
 	require("kickstart.plugins.gitsigns"), -- adds gitsigns recommend keymaps
-
 	-- {
 	-- "github/copilot.vim",
 	-- },
@@ -758,6 +759,8 @@ require("lazy").setup({
 	},
 
 	{ "akinsho/bufferline.nvim", version = "*", dependencies = "nvim-tree/nvim-web-devicons", opts = {} },
+
+	{ "windwp/nvim-ts-autotag", lazy = false, opts = {} },
 
 	{
 		"folke/snacks.nvim",
