@@ -590,6 +590,35 @@ require("lazy").setup({
 		opts = { signs = false },
 	},
 
+	{
+		"pwntester/octo.nvim",
+		dependencies = { "nvim-lua/plenary.nvim", "folke/snacks.nvim", "nvim-tree/nvim-web-devicons" },
+		opts = {
+			picker = "snacks",
+			default_remote = { "origin" },
+			default_merge_method = "commit",
+			default_delete_branch = false,
+			issues = {
+				order_by = {
+					field = "CREATED_AT",
+					direction = "DESC",
+				},
+			},
+			reviews = {
+				auto_show_threads = true,
+				focues = "right",
+			},
+			pull_requests = {
+				order_by = {
+					field = "UPDATED_AT",
+					direction = "DESC",
+				},
+				always_select_remote_on_create = false,
+				use_branch_name_as_title = false,
+			},
+		},
+	},
+
 	{ -- Collection of various small independent plugins/modules
 		"echasnovski/mini.nvim",
 		config = function()
