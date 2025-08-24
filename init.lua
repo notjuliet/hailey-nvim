@@ -116,6 +116,8 @@ vim.keymap.set("n", "<C-l>", "<C-w><C-l>", { desc = "Move focus to the right win
 vim.keymap.set("n", "<C-j>", "<C-w><C-j>", { desc = "Move focus to the lower window" })
 vim.keymap.set("n", "<C-k>", "<C-w><C-k>", { desc = "Move focus to the upper window" })
 
+-- vim.experimental.check_rtp_message = false
+
 vim.g.snacks_animate = false
 ---@type table<number, {token:lsp.ProgressToken, msg:string, done:boolean}[]>
 local progress = vim.defaulttable()
@@ -760,9 +762,11 @@ require("lazy").setup({
 			vim.diagnostic.config({ virtual_text = false }) -- Only if needed in your configuration, if you already have native LSP diagnostics
 		end,
 	},
+
 	{
 		"OXY2DEV/markview.nvim",
 		lazy = false,
+		priority = 49,
 	},
 
 	{
