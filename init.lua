@@ -434,6 +434,31 @@ require("lazy").setup({
 
 			local capabilities = vim.lsp.protocol.make_client_capabilities()
 
+			local function get_python_path(workspace)
+				-- Check for uv first
+				local uv_python =
+					vim.fn.system("cd " .. workspace .. " && uv run which python 2>/dev/null"):gsub("\n", "")
+				if vim.v.shell_error == 0 and uv_python ~= "" then
+					return uv_python
+				end
+
+				-- Fallback to standard virtual environments
+				local venv_paths = {
+					workspace .. "/.venv/bin/python",
+					workspace .. "/venv/bin/python",
+					workspace .. "/.virtualenv/bin/python",
+				}
+
+				for _, path in ipairs(venv_paths) do
+					if vim.fn.filereadable(path) == 1 then
+						return path
+					end
+				end
+
+				-- Final fallback to system python
+				return vim.fn.exepath("python3") or vim.fn.exepath("python") or "python"
+			end
+
 			-- Enable the following language servers
 			--  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
 			--
@@ -448,9 +473,6 @@ require("lazy").setup({
 				docker_compose_language_service = {},
 				-- gopls = {},
 				marksman = {},
-				pylsp = {
-					cmd = { "uv", "run", "pylsp" },
-				},
 				vtsls = {},
 				tailwindcss = {},
 				lua_ls = {
@@ -466,6 +488,62 @@ require("lazy").setup({
 							diagnostics = { disable = { "missing-fields" } },
 						},
 					},
+				},
+				ruff = {
+					init_options = {
+						settings = {
+							configurationPreference = "filesystemFirst",
+							fixAll = true,
+							organizeImports = true,
+							workspaceSettings = {
+								lineLength = 120,
+								targetVersion = "py311",
+							},
+						},
+					},
+					on_attach = function(client, bufnr)
+						client.server_capabilities.hoverProvider = false
+
+						vim.api.nvim_create_autocmd("BufWritePre", {
+							buffer = bufnr,
+							callback = function()
+								vim.lsp.buf.format({ async = false })
+							end,
+						})
+					end,
+				},
+				pyright = {
+					before_init = function(_, config)
+						config.settings.python = vim.tbl_deep_extend("force", config.settings.python or {}, {
+							pythonPath = get_python_path(config.root_dir),
+						})
+					end,
+					settings = {
+						python = {
+							analysis = {
+								typeCheckingMode = "strict",
+								diagnosticMode = "workspace",
+								useLibraryCodeForTypes = true,
+								autoSearchPaths = true,
+								autoImportCompletions = true,
+								diagnosticSeverityOverrides = {
+									reportMissingTypeStubs = "none",
+									reportGeneralTypeIssues = "warning",
+									reportOptionalMemberAccess = "none",
+								},
+								stubPath = "typings",
+								ignore = { "**/node_modules", "**/__pycache__", "**/venv", "**/.venv" },
+							},
+							linting = {
+								enabled = false,
+							},
+						},
+					},
+					on_attach = function(client, bufnr)
+						-- Disable formatting capabilities for Pyright (let ruff handle it)
+						client.server_capabilities.documentFormattingProvider = false
+						client.server_capabilities.documentRangeFormattingProvider = false
+					end,
 				},
 			}
 
@@ -500,6 +578,8 @@ require("lazy").setup({
 				"prettierd",
 				"reorder-python-imports",
 				"htmlhint",
+				"pyright",
+				"ruff",
 			})
 			require("mason-tool-installer").setup({ ensure_installed = ensure_installed })
 
@@ -907,6 +987,39 @@ require("lazy").setup({
 			lazy = "💤 ",
 		},
 	},
+})
+
+vim.api.nvim_create_autocmd({ "BufEnter", "BufRead", "BufNewFile" }, {
+	pattern = "*.py",
+	callback = function()
+		local root_dir = vim.fn.getcwd()
+
+		local uv_python = vim.fn.system("cd " .. root_dir .. " && uv run which python 2>/dev/null"):gsub("\n", "")
+
+		if vim.v.shell_error == 0 and uv_python ~= "" then
+			local venv_path = uv_python:match("(.*/%.venv)")
+			if venv_path then
+				vim.env.VIRTUAL_ENV = venv_path
+				vim.env.PATH = venv_path .. "/bin:" .. vim.env.PATH
+				vim.g.python3_host_prog = uv_python
+			end
+		else
+			local venv_paths = {
+				root_dir .. "/.venv",
+				root_dir .. "/venv",
+				root_dir .. "/.virtualenv",
+			}
+
+			for _, venv in ipairs(venv_paths) do
+				if vim.fn.isdirectory(venv) == 1 then
+					vim.env.VIRTUAL_ENV = venv
+					vim.env.PATH = venv .. "/bin:" .. vim.env.PATH
+					vim.g.python3_host_prog = venv .. "/bin/python"
+					break
+				end
+			end
+		end
+	end,
 })
 
 -- The line beneath this is called `modeline`. See `:help modeline`
