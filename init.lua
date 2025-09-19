@@ -541,6 +541,10 @@ require("lazy").setup({
 				},
 			}
 
+			for server, config in pairs(servers) do
+				vim.lsp.config(server, config)
+			end
+
 			-- Ensure the servers and tools above are installed
 			--
 			-- To check the current status of installed tools and/or manually install
