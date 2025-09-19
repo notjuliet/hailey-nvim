@@ -183,7 +183,7 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
 	if vim.v.shell_error ~= 0 then
 		error("Error cloning lazy.nvim:\n" .. out)
 	end
-end ---@diagnostic disable-next-line: undefined-field
+end
 vim.opt.rtp:prepend(lazypath)
 
 -- [[ Configure and install plugins ]]
@@ -199,7 +199,7 @@ vim.opt.rtp:prepend(lazypath)
 -- NOTE: Here is where you install your plugins.
 require("lazy").setup({
 	-- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
-	"tpope/vim-sleuth", -- Detect tabstop and shiftwidth automatically
+	{ "NMAC427/guess-indent.nvim", opts = {} }, -- Detect tabstop and shiftwidth automatically
 
 	-- NOTE: Plugins can also be added by using a table,
 	-- with the first argument being the link and the following
@@ -322,8 +322,6 @@ require("lazy").setup({
 			{ "williamboman/mason.nvim", opts = {} },
 			"williamboman/mason-lspconfig.nvim",
 			"WhoIsSethDaniel/mason-tool-installer.nvim",
-
-			"saghen/blink.cmp",
 		},
 		config = function()
 			-- Brief aside: **What is LSP?**
@@ -376,17 +374,13 @@ require("lazy").setup({
 					-- or a suggestion from your LSP for this to activate.
 					map("<leader>C", vim.lsp.buf.code_action, "[C]ode Action", { "n", "x" })
 
-					-- WARN: This is not Goto Definition, this is Goto Declaration.
-					--  For example, in C this would take you to the header.
-					map("gD", vim.lsp.buf.declaration, "[G]oto [D]eclaration")
-
 					-- The following two autocommands are used to highlight references of the
 					-- word under your cursor when your cursor rests there for a little while.
 					--    See `:help CursorHold` for information about when this is executed
 					--
 					-- When you move your cursor, the highlights will be cleared (the second autocommand).
 					local client = vim.lsp.get_client_by_id(event.data.client_id)
-					if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_documentHighlight) then
+					if client and client:supports_method(vim.lsp.protocol.Methods.textDocument_documentHighlight) then
 						local highlight_augroup =
 							vim.api.nvim_create_augroup("kickstart-lsp-highlight", { clear = false })
 						vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
@@ -414,7 +408,7 @@ require("lazy").setup({
 					-- code, if the language server you are using supports them
 					--
 					-- This may be unwanted, since they displace some of your code
-					if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint) then
+					if client and client:supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint) then
 						map("<leader>th", function()
 							vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled({ bufnr = event.buf }))
 						end, "[T]oggle Inlay [H]ints")
@@ -547,11 +541,6 @@ require("lazy").setup({
 				},
 			}
 
-			local nvim_lsp = require("lspconfig")
-			for server, config in pairs(servers) do
-				config.capabilities = require("blink.cmp").get_lsp_capabilities(config.capabilities)
-				nvim_lsp[server].setup(config)
-			end
 			-- Ensure the servers and tools above are installed
 			--
 			-- To check the current status of installed tools and/or manually install
@@ -584,6 +573,9 @@ require("lazy").setup({
 			require("mason-tool-installer").setup({ ensure_installed = ensure_installed })
 
 			require("mason-lspconfig").setup({
+				ensure_installed = {},
+				automatic_enable = true,
+				automatic_installation = false,
 				handlers = {
 					function(server_name)
 						local server = servers[server_name] or {}
@@ -723,8 +715,38 @@ require("lazy").setup({
 			--  You could remove this setup call if you don't like it,
 			--  and try some other statusline plugin
 			local statusline = require("mini.statusline")
+			-- Status line content configuration
+			local content = function()
+				local mode, mode_hl = MiniStatusline.section_mode({ trunc_width = 120 })
+				local git = MiniStatusline.section_git({ trunc_width = 40 })
+				local diff = MiniStatusline.section_diff({ trunc_width = 75 })
+				local diagnostics = statusline.section_diagnostics({
+					trunc_width = 75,
+					signs = {
+						ERROR = "󰅚 ",
+						WARN = "󰀪 ",
+						INFO = "󰋽 ",
+						HINT = "󰌶 ",
+					},
+				})
+				local lsp = MiniStatusline.section_lsp({ trunc_width = 75 })
+				local filename = MiniStatusline.section_filename({ trunc_width = 140 })
+				local fileinfo = MiniStatusline.section_fileinfo({ trunc_width = 120 })
+				local location = MiniStatusline.section_location({ trunc_width = 75 })
+				local search = MiniStatusline.section_searchcount({ trunc_width = 75 })
+
+				return MiniStatusline.combine_groups({
+					{ hl = mode_hl, strings = { mode } },
+					{ hl = "MiniStatuslineDevinfo", strings = { git, diff, diagnostics, lsp } },
+					"%<", -- Mark general truncate point
+					{ hl = "MiniStatuslineFilename", strings = { filename } },
+					"%=", -- End left alignment
+					{ hl = "MiniStatuslineFileinfo", strings = { fileinfo } },
+					{ hl = mode_hl, strings = { search, location } },
+				})
+			end
 			-- set use_icons to true if you have a Nerd Font
-			statusline.setup({ use_icons = vim.g.have_nerd_font })
+			statusline.setup({ use_icons = vim.g.have_nerd_font, content = { active = content } })
 
 			-- You can configure sections in the statusline by overriding their
 			-- default behavior. For example, here we set the section for
@@ -792,9 +814,6 @@ require("lazy").setup({
 	require("kickstart.plugins.autopairs"),
 	-- require("kickstart.plugins.neo-tree"),
 	require("kickstart.plugins.gitsigns"), -- adds gitsigns recommend keymaps
-	-- {
-	-- "github/copilot.vim",
-	-- },
 
 	{
 		"saghen/blink.cmp",
@@ -826,6 +845,7 @@ require("lazy").setup({
 			require("lsp_signature").setup({})
 		end,
 	},
+
 	{
 		"rachartier/tiny-inline-diagnostic.nvim",
 		event = "VeryLazy", -- Or `LspAttach`
@@ -867,7 +887,7 @@ require("lazy").setup({
 			"nvim-treesitter/nvim-treesitter",
 		},
 		config = function()
-			require("gomodifytags").setup() -- Optional: You can add any specific configuration here if needed.
+			require("gomodifytags").setup({}) -- Optional: You can add any specific configuration here if needed.
 		end,
 	},
 
